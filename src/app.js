@@ -1,5 +1,6 @@
 const express = require('express');
 const app = express();
+const taskRoutes = require("./routes/taskRoutes");
 
 app.use(express.json());
 
@@ -9,6 +10,8 @@ app.get("/health", (req,res)=>{
     });
 }
 )
+
+app.use("/api", taskRoutes);
 
 
 module.exports=app;
