@@ -1,0 +1,687 @@
+# Day 7 - Docker Internals and Runtime Deep Dive
+
+## Objective
+
+Deeply understand:
+- how Docker images work
+- how containers start
+- image build lifecycle
+- runtime lifecycle
+- Dockerfile instructions
+- Linux usage in containers
+- kernel sharing
+- port mapping
+- container runtime behavior
+
+This was the first major infrastructure engineering deep-dive.
+
+---
+
+# Big Mental Model
+
+Docker lifecycle:
+
+Dockerfile
+↓
+docker build
+↓
+Docker Image
+↓
+docker run
+↓
+Docker Container
+↓
+Application Process Starts
+
+---
+
+# Dockerfile Deep Dive
+
+Current Dockerfile:
+
+```dockerfile
+FROM node:18
+
+WORKDIR /app
+
+COPY package*.json ./
+
+RUN npm install
+
+COPY . .
+
+EXPOSE 3000
+
+CMD ["npm", "start"]
+```
+
+---
+
+# Understanding Each Dockerfile Instruction
+
+---
+
+## FROM
+
+```dockerfile
+FROM node:18
+```
+
+Purpose:
+Use an existing Node.js base image from Docker Hub.
+
+---
+
+# Important Understanding
+
+This does NOT only provide Linux.
+
+The image already contains:
+- Linux filesystem
+- Node.js runtime
+- npm
+- Node-related environment setup
+
+Image acts like a preconfigured environment template.
+
+---
+
+# Important Realization
+
+Different base images contain different runtime environments.
+
+Examples:
+
+### node image
+Contains:
+- Linux
+- Node.js
+- npm
+
+---
+
+### maven image
+Contains:
+- Linux
+- Java
+- Maven
+- JVM
+
+---
+
+### python image
+Contains:
+- Linux
+- Python
+- pip
+
+---
+
+# Key Understanding
+
+Docker images are not just operating systems.
+
+They package:
+- filesystem
+- runtime
+- dependencies
+- tooling
+- environment setup
+
+---
+
+## WORKDIR
+
+```dockerfile
+WORKDIR /app
+```
+
+Purpose:
+Set working directory inside container.
+
+Equivalent to:
+
+```bash
+cd /app
+```
+
+inside container.
+
+All future commands execute relative to this directory.
+
+---
+
+## COPY package*.json ./
+
+Purpose:
+Copy package files from host machine into container.
+
+---
+
+# Important Optimization Concept
+
+Only package files copied first because:
+`npm install` depends only on package files.
+
+This improves Docker layer caching.
+
+---
+
+# Docker Layer Understanding
+
+Every Dockerfile instruction creates an image layer.
+
+Example:
+
+FROM
+↓
+WORKDIR
+↓
+COPY
+↓
+RUN
+↓
+COPY
+↓
+CMD
+
+Each layer can be cached.
+
+---
+
+# Why This Matters
+
+If only source code changes:
+Docker can reuse cached dependency installation layer.
+
+This makes rebuilds much faster.
+
+---
+
+## RUN npm install
+
+```dockerfile
+RUN npm install
+```
+
+Purpose:
+Install dependencies during image build phase.
+
+Dependencies become permanently part of image filesystem.
+
+---
+
+# Important Distinction
+
+## RUN
+Executes during:
+IMAGE BUILD TIME
+
+---
+
+# RUN modifies image itself.
+
+---
+
+## COPY . .
+
+```dockerfile
+COPY . .
+```
+
+Purpose:
+Copy remaining project files into container.
+
+---
+
+# Dot Understanding
+
+First dot:
+Source directory on host machine.
+
+Second dot:
+Destination inside container (`/app`).
+
+---
+
+## EXPOSE 3000
+
+```dockerfile
+EXPOSE 3000
+```
+
+Purpose:
+Document intended container port usage.
+
+Mostly acts as:
+- metadata
+- networking hint
+- documentation
+
+---
+
+# Important Realization
+
+EXPOSE does NOT actually bind host ports.
+
+Port binding happens during:
+
+```bash
+docker run -p
+```
+
+---
+
+## CMD ["npm", "start"]
+
+Purpose:
+Define default startup command for container runtime.
+
+When container starts:
+Docker executes:
+
+```bash
+npm start
+```
+
+inside container.
+
+---
+
+# Important Distinction
+
+## CMD
+Executes during:
+CONTAINER RUNTIME
+
+NOT during image build.
+
+---
+
+# Build Phase vs Runtime Phase
+
+This was one of the most important learnings.
+
+---
+
+# Build Phase
+
+Triggered using:
+
+```bash
+docker build
+```
+
+During build:
+Docker executes:
+- FROM
+- WORKDIR
+- COPY
+- RUN
+
+to create image layers.
+
+---
+
+# Runtime Phase
+
+Triggered using:
+
+```bash
+docker run
+```
+
+During runtime:
+Docker:
+- creates container from image
+- starts container
+- executes CMD
+
+---
+
+# Very Important Understanding
+
+Image itself does NOT run.
+
+Image is:
+- passive template
+- packaged filesystem
+- reusable blueprint
+
+Only containers run processes.
+
+---
+
+# RUN vs CMD Deep Understanding
+
+## RUN
+
+Purpose:
+Prepare image.
+
+Example:
+```dockerfile
+RUN npm install
+```
+
+This permanently modifies image filesystem.
+
+---
+
+## CMD
+
+Purpose:
+Start application process during container runtime.
+
+Example:
+```dockerfile
+CMD ["npm", "start"]
+```
+
+This launches Node.js application when container starts.
+
+---
+
+# Important Realization
+
+RUN creates image layers.
+
+CMD only stores:
+"default startup behavior"
+
+inside image metadata.
+
+---
+
+# Why Containers Stay Alive
+
+Container fundamentally runs around:
+MAIN PROCESS.
+
+In this case:
+```bash
+node src/server.js
+```
+
+If main process exits:
+container stops.
+
+---
+
+# Example
+
+If CMD was:
+
+```dockerfile
+CMD ["echo", "hello"]
+```
+
+Container would:
+- print hello
+- exit immediately
+
+because process finished.
+
+---
+
+# Container Logging Understanding
+
+While running container:
+
+```bash
+docker run -p 3007:3000 ai-task-management-system
+```
+
+Output appeared:
+
+```plaintext
+GET /api/tasks
+```
+
+---
+
+# Root Cause
+
+This was generated by application logger middleware:
+
+```js
+console.log(`${req.method} ${req.url}`);
+```
+
+Docker streams:
+- container stdout
+- container stderr
+
+directly to terminal.
+
+---
+
+# Important Infrastructure Understanding
+
+Container logs fundamentally come from:
+application stdout/stderr streams.
+
+This becomes foundational later for:
+- docker logs
+- kubectl logs
+- centralized logging
+- observability systems
+
+---
+
+# Host Port vs Container Port
+
+Command used:
+
+```bash
+docker run -p 3007:3000 ai-task-management-system
+```
+
+Meaning:
+
+HOST PORT : CONTAINER PORT
+
+Example:
+- host machine port 3007
+- container port 3000
+
+---
+
+# Important Networking Understanding
+
+Containers have isolated networking environments.
+
+Container port and host port are different concepts.
+
+---
+
+# Debugging Session - Port Conflict
+
+## Problem
+
+Error:
+
+```plaintext
+Ports are not available...
+Only one usage of each socket address...
+```
+
+---
+
+# Root Cause
+
+Host machine port 3000 was already occupied.
+
+Most likely by:
+- local Node.js app
+OR
+- another container
+
+---
+
+# Important Realization
+
+Issue was:
+HOST-SIDE PORT CONFLICT
+
+NOT container issue.
+
+---
+
+# Important Learning
+
+Changing:
+
+```dockerfile
+EXPOSE 3000
+```
+
+would NOT solve problem.
+
+Because EXPOSE does not perform actual host port binding.
+
+---
+
+# Linux Containers on Windows
+
+One of the biggest conceptual learnings.
+
+---
+
+# Question
+
+How can Linux containers run when host OS is Windows?
+
+---
+
+# Important Understanding
+
+Linux containers require:
+LINUX KERNEL FEATURES.
+
+Examples:
+- namespaces
+Namespaces
+
+Provide:
+
+isolation.
+
+Container thinks:
+
+it has own filesystem
+own network
+own processes
+
+even though host is shared.
+
+- cgroups
+
+cgroups
+
+Provide:
+
+resource control.
+
+Can limit:
+
+CPU
+memory
+disk IO
+
+per container.
+
+- process isolation
+
+Windows kernel cannot directly provide these.
+
+---
+
+# What Docker Desktop Does
+
+Docker Desktop secretly runs:
+LIGHTWEIGHT LINUX VM
+
+Usually using:
+- WSL2
+OR
+- Hyper-V
+
+---
+
+# Actual Architecture
+
+Windows Host
+↓
+WSL2 Linux VM
+↓
+Docker Engine
+↓
+Linux Containers
+
+---
+
+# Important Distinction
+
+Docker images contain:
+- Linux filesystem
+- runtimes
+- binaries
+
+BUT NOT:
+full Linux kernel.
+
+---
+
+# Kernel Comes From
+
+- Linux host directly
+OR
+- WSL2 Linux VM on Windows
+
+---
+
+# Why Containers Are Lightweight
+
+Containers share kernel.
+
+Unlike virtual machines:
+they do not run full guest OS kernels independently.
+
+---
+
+# Why Linux Dominates Containers
+
+Linux dominates because:
+- namespaces exist in Linux kernel
+- cgroups exist in Linux kernel
+- Linux is lightweight
+- open-source ecosystem is Linux-centric
+- cloud infrastructure heavily uses Linux
+
+---
+
+# Important Technologies Behind Containers
+
+Linux kernel features:
+- namespaces
+- cgroups
+- filesystem isolation
+- process isolation
+
+Docker standardized and packaged these concepts.
+
+---
+
+# Key Takeaways
+
+- Docker images package runtime environments.
+- Containers are running processes.
+- Images are passive templates.
+- RUN executes during build phase.
+- CMD executes during runtime phase.
+- Containers share kernels instead of running full OS kernels.
+- Linux dominates container ecosystems because of kernel capabilities.
+- Host ports and container ports are separate concepts.
+- Docker layer caching is critical for build optimization.
+- Container logs are application stdout/stderr streams.
