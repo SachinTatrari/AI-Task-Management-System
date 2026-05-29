@@ -1,0 +1,19 @@
+version: '3.9'
+
+services:
+
+  app:
+    build: .
+    ports:
+      - "3007:3000"
+    environment:
+      - MONGO_URI=mongodb://mongo:27017/taskdb
+
+    depends_on:
+      - mongo
+
+  mongo:
+    image: mongo:7
+    ports:
+      - "27017:27017"      
+  
