@@ -4,6 +4,9 @@ services:
 
   app:
     build: .
+    volumes:
+      - .:/app
+
     ports:
       - "3007:3000"
     environment:
