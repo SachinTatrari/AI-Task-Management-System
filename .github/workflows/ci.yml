@@ -19,3 +19,6 @@ jobs:
               
             - name: Run Tests
               run: npm test
+
+            - name: Build Docker Image
+              run: docker build -t ai-task-management-system .    
