@@ -33,4 +33,6 @@ jobs:
               with: 
                 context: .
                 push: true
-                tags: sachin3586/ai-task-management-system-image:latest    
+                tags: |
+                  sachin3586/ai-task-management-system-image:latest
+                  sachin3586/ai-task-management-system-image:${{ github.sha }}
