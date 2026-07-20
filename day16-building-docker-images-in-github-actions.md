@@ -356,3 +356,4 @@ Upgrade intentionally after testing rather than automatically following every ne
 A professional CI pipeline should not only prove that the application works.
 
 It should also prove that the exact runtime used in production can successfully build a deployable artifact in a clean, reproducible environment.
+
