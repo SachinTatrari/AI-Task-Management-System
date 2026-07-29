@@ -43,7 +43,6 @@ COPY --from=builder /app/src/server.js ./
 COPY --from=builder /app/src/app.js ./
 COPY --from=builder /app/src/routes ./routes
 COPY --from=builder /app/src/controllers ./controllers
-COPY --from=builder /app/src/models ./models
 COPY --from=builder /app/src/middleware ./middleware
 COPY --from=builder /app/src/config ./config
 
