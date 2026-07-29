@@ -39,14 +39,13 @@ COPY --from=builder /app/package*.json ./
 
 RUN npm ci --omit=dev
 
-COPY --from=builder /app/server.js ./
-COPY --from=builder /app/app.js ./
-COPY --from=builder /app/routes ./routes
-COPY --from=builder /app/controllers ./controllers
-COPY --from=builder /app/models ./models
-COPY --from=builder /app/middleware ./middleware
-COPY --from=builder /app/config ./config
-COPY --from=builder /app/utils ./utils
+COPY --from=builder /app/src/server.js ./
+COPY --from=builder /app/src/app.js ./
+COPY --from=builder /app/src/routes ./routes
+COPY --from=builder /app/src/controllers ./controllers
+COPY --from=builder /app/src/models ./models
+COPY --from=builder /app/src/middleware ./middleware
+COPY --from=builder /app/src/config ./config
 
 EXPOSE 3000
 
