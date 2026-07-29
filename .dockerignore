@@ -1,0 +1,40 @@
+# Git
+.git
+.gitignore
+
+# GitHub
+.github
+
+# Local dependencies
+node_modules
+
+# Logs
+*.log
+
+# Documentation
+README.md
+docs/
+
+# Tests
+tests/
+
+# Local environment files
+.env
+.env.*
+
+# IDE files
+.vscode
+.idea
+
+# macOS
+.DS_Store
+
+# Temporary files
+tmp/
+temp/
+
+# Coverage reports
+coverage/
+
+# Docker compose (optional)
+docker-compose.yml
