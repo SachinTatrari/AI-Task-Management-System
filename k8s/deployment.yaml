@@ -1,0 +1,45 @@
+
+apiVersion: apps/v1
+kind: Deployment
+
+metadata: 
+  name: task-api
+
+spec: 
+  replicas: 3
+
+  selector: 
+    matchLabels:
+      app: task-api
+
+  template:
+    metadata:
+      labels:
+        app: task-api
+
+    spec: 
+      containers: 
+        - name: task-api
+          image: ai-task-management-system-app:latest
+          imagePullPolicy: IfNotPresent
+          ports: 
+           - containerPort: 3000
+
+          env: 
+           - name: NODE_ENV 
+             valueFrom: 
+              configMapKeyRef:
+                name: task-api-config
+                key: NODE_ENV
+
+           - name: PORT
+             valueFrom:
+              configMapKeyRef:
+                name: task-api-config
+                key: PORT   
+
+           - name: MONGO_URI
+             valueFrom:
+              secretKeyRef:
+                name: task-api-secret
+                key: MONGO_URI       
