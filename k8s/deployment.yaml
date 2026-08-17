@@ -16,6 +16,8 @@ spec:
     metadata:
       labels:
         app: task-api
+      annotations:
+        config-version: "2"
 
     spec: 
       containers: 
@@ -36,7 +38,13 @@ spec:
              valueFrom:
               configMapKeyRef:
                 name: task-api-config
-                key: PORT   
+                key: PORT  
+
+           - name: LOG_LEVEL
+             valueFrom:
+              configMapKeyRef:
+                name: task-api-config 
+                key: LOG_LEVEL
 
            - name: MONGO_URI
              valueFrom:

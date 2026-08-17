@@ -7,4 +7,5 @@ metadata:
 data:
   NODE_ENV: development
   PORT: "3000"
+  LOG_LEVEL: debug
     
