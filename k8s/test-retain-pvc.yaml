@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+
+metadata:
+  name: test-retain-pvc
+
+spec:
+  accessModes:
+    - ReadWriteOnce
+
+  storageClassName: test-retain-storage
+
+  resources:
+    requests:
+      storage: 1Gi
