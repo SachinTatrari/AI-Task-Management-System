@@ -1,0 +1,23 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - ../../base
+
+replicas:
+ - name: task-api
+   count: 1
+
+secretGenerator:
+  - name: task-api-secret
+    envs:
+      - .env.secret   
+
+patches:
+ - target: 
+    kind: ConfigMap
+    name: task-api-config
+   patch: |-
+    - op: replace
+      path: /data/LOG_LEVEL
+      value: debug      
