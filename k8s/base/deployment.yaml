@@ -24,6 +24,15 @@ spec:
         - name: task-api
           image: ai-task-management-system-app:latest
           imagePullPolicy: IfNotPresent
+          
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "128Mi"
+            limits:
+              cpu: "500m"
+              memory: "256Mi"
+
           ports: 
            - containerPort: 3000
 
