@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: Pod
+
+metadata:
+  name: scheduling-test
+
+spec: 
+  nodeSelector:
+    workload: application
+  containers:
+    - name: test
+      image: nginx:alpine    

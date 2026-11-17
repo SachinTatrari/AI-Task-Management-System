@@ -19,7 +19,7 @@ spec:
       annotations:
         config-version: "2"
 
-    spec: 
+    spec:
       containers: 
         - name: task-api
           image: ai-task-management-system-app:latest

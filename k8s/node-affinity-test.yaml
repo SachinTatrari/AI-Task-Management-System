@@ -1,0 +1,30 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: node-affinity-test
+  labels:
+    app: scheduling-lab
+
+spec: 
+  containers:
+    - name: nginx
+      image: nginx:latest
+
+  affinity:
+    nodeAffinity: 
+      # requiredDuringSchedulingIgnoredDuringExecution:
+      #   nodeSelectorTerms:
+      #     - matchExpressions:
+      #         - key: workload
+      #           operator: In
+      #           values: 
+      #             - database  
+
+      preferredDuringSchedulingIgnoredDuringExecution:
+       - weight: 100
+         preference:  
+          matchExpressions:
+           - key: workload
+             operator: In
+             values:
+               - database
